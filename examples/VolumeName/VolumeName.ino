@@ -80,10 +80,10 @@ bool getPartitionVolumeLabel(PFsVolume &partVol, uint8_t *pszVolName, uint16_t c
 
 
 
-bool mbrDmp(UsbFs *myMsc) {
+bool mbrDmp(BlockDeviceInterface *blockDev) {
   MbrSector_t mbr;
   // bool valid = true;
-  if (!myMsc->usbDrive()->readSector(0, (uint8_t*)&mbr)) {
+  if (!blockDev->readSector(0, (uint8_t*)&mbr)) {
     Serial.print("\nread MBR failed.\n");
     //errorPrint();
     return false;
@@ -201,7 +201,9 @@ void procesMSDrive(uint8_t drive_number, msController &msDrive, UsbFs &msc)
   }
   cmsReport = -1;
 
-  mbrDmp( &msc );
+//  mbrDmp( &msc );
+  mbrDmp( msc.usbDrive() );
+
   for (uint8_t i = 1; i < 5; i++) {
     PFsVolume partVol;
     uint8_t volName[32];
@@ -257,6 +259,7 @@ void loop(void) {
     Serial.println("initialization failed.\n");
   } else {
     Serial.println("SD card is present.\n");
+    mbrDmp(sd.card() );
     PFsVolume partVol;
     if (!partVol.begin(sd.card(), true, 1)) Serial.println("SD Did not open partition...");
     switch (partVol.fatType())
