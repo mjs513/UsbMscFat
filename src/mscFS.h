@@ -125,6 +125,24 @@ public:
 	virtual void rewindDirectory(void) {
 		mscfatfile.rewindDirectory();
 	}
+#ifdef FS_FILE_SUPPORT_DATES
+	// These will all return false as only some FS support it.
+	virtual bool getAccessDateTime(uint16_t* pdate, uint16_t* ptime) {
+		return mscfatfile.getAccessDateTime(pdate, ptime);
+	}
+	virtual bool getCreateDateTime(uint16_t* pdate, uint16_t* ptime) {
+		return mscfatfile.getCreateDateTime(pdate, ptime);
+	}
+	virtual bool getModifyDateTime(uint16_t* pdate, uint16_t* ptime) {
+		return mscfatfile.getModifyDateTime(pdate, ptime);
+	}
+	virtual bool timestamp(uint8_t flags, uint16_t year, uint8_t month, uint8_t day,
+               uint8_t hour, uint8_t minute, uint8_t second) {
+		//return mscfatfile.timestamp(year, month, day, hour, minute, second);
+		return false;
+	}
+#endif
+
 	using Print::write;
 private:
 	MSCFAT_FILE mscfatfile;
