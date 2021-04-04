@@ -138,7 +138,7 @@ public:
 	}
 	virtual bool timestamp(uint8_t flags, uint16_t year, uint8_t month, uint8_t day,
                uint8_t hour, uint8_t minute, uint8_t second) {
-		//return mscfatfile.timestamp(year, month, day, hour, minute, second);
+		return mscfatfile.timestamp(flags, year, month, day, hour, minute, second);
 		return false;
 	}
 #endif
