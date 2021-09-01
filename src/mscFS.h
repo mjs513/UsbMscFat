@@ -41,7 +41,7 @@
   #define MSC_MAX_FILENAME_LEN 256
 #endif
 
-class MSCFile : public File
+class MSCFile : public FileImpl
 {
 private:
 	// Classes derived from File are never meant to be constructed
@@ -56,12 +56,7 @@ public:
 		if (mscfatfile) mscfatfile.close();
 		if (filename) free(filename);
 	}
-#ifdef FILE_WHOAMI
-	virtual void whoami() {
-		Serial.printf("   MSCFile this=%x, refcount=%u\n",
-			(int)this, getRefcount());
-	}
-#endif
+
 	virtual size_t write(const void *buf, size_t size) {
 		return mscfatfile.write(buf, size);
 	}
@@ -99,7 +94,7 @@ public:
 		}
 		mscfatfile.close();
 	}
-	virtual operator bool() {
+	virtual bool isOpen() {
 		return mscfatfile.isOpen();
 	}
 	virtual const char * name() {
@@ -143,7 +138,7 @@ public:
 	}
 #endif
 
-	using Print::write;
+	//using Print::write;
 private:
 	MSCFAT_FILE mscfatfile;
 	char *filename;
@@ -161,6 +156,7 @@ public:
 	File open(const char *filepath, uint8_t mode = FILE_READ) {
 		oflag_t flags = O_READ;
 		if (mode == FILE_WRITE) {flags = O_RDWR | O_CREAT | O_AT_END; _cached_usedSize_valid = false; }
+
 		else if (mode == FILE_WRITE_BEGIN) {flags = O_RDWR | O_CREAT;  _cached_usedSize_valid = false; }
 		MSCFAT_FILE file = mscfs.open(filepath, flags);
 		if (file) return File(new MSCFile(file));

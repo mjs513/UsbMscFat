@@ -63,7 +63,7 @@ SdExFat sd;
 ExFile file;
 #elif SD_FAT_TYPE == 3
 UsbFs msc1;
-PFsFile file;
+FsFile file;
 //MscFile file;
 #else  // SD_FAT_TYPE
 #error Invalid SD_FAT_TYPE
@@ -208,6 +208,7 @@ void loop() {
       m = micros() - m;
       totalLatency += m;
       if (buf[BUF_SIZE-1] != '\n') {
+
         error("data check error");
       }
       if (skipLatency) {
