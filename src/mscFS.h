@@ -120,23 +120,61 @@ public:
 	virtual void rewindDirectory(void) {
 		mscfatfile.rewindDirectory();
 	}
-#ifdef FS_FILE_SUPPORT_DATES
-	// These will all return false as only some FS support it.
-	virtual bool getAccessDateTime(uint16_t* pdate, uint16_t* ptime) {
-		return mscfatfile.getAccessDateTime(pdate, ptime);
+
+	virtual bool getCreateDate(DateTimeFields &tm) {
+		uint16_t pdate; uint16_t ptime;
+		bool success;
+		success = mscfatfile.getCreateDateTime(&pdate, &ptime);
+		if(!success) return false;
+		tm.sec = FS_SECOND(ptime);
+		tm.min = FS_MINUTE(ptime);
+		tm.hour = FS_HOUR(ptime);
+		tm.mday = FS_DAY(pdate);
+		tm.mon = FS_MONTH(pdate) - 1;
+		tm.year = FS_YEAR(pdate) - 1900;
+		return true;
 	}
-	virtual bool getCreateDateTime(uint16_t* pdate, uint16_t* ptime) {
-		return mscfatfile.getCreateDateTime(pdate, ptime);
+	virtual bool getModifyDate(DateTimeFields &tm) {
+		uint16_t pdate; uint16_t ptime;
+		bool success;
+		success = mscfatfile.getModifyDateTime(&pdate, &ptime);
+		if(!success) return false;
+		tm.sec = FS_SECOND(ptime);
+		tm.min = FS_MINUTE(ptime);
+		tm.hour = FS_HOUR(ptime);
+		tm.mday = FS_DAY(pdate);
+		tm.mon = FS_MONTH(pdate) - 1;
+		tm.year = FS_YEAR(pdate) - 1900;
+		return true;
 	}
-	virtual bool getModifyDateTime(uint16_t* pdate, uint16_t* ptime) {
-		return mscfatfile.getModifyDateTime(pdate, ptime);
+
+	
+	bool setCreateTime(const DateTimeFields &tm) {
+		uint8_t flags, month, day, hour, minute, second;
+		uint16_t year;
+		bool success = mscfatfile.timestamp(flags, year, month, day, hour, minute, second);
+		if(!success) return false;
+		tm.sec = second;
+		tm.min = minute;
+		tm.hour = hour;
+		tm.mday = day;
+		tm.mon = month - 1;
+		tm.year = year - 1900;
+		return true;
 	}
-	virtual bool timestamp(uint8_t flags, uint16_t year, uint8_t month, uint8_t day,
-               uint8_t hour, uint8_t minute, uint8_t second) {
-		return mscfatfile.timestamp(flags, year, month, day, hour, minute, second);
-		return false;
+	bool setModifyTime(const DateTimeFields &tm) {
+		uint8_t flags, month, day, hour, minute, second;
+		uint16_t year;
+		bool success = mscfatfile.timestamp(flags, year, month, day, hour, minute, second);
+		if(!success) return false;
+		tm.sec = second;
+		tm.min = minute;
+		tm.hour = hour;
+		tm.mday = day;
+		tm.mon = month - 1;
+		tm.year = year - 1900;
+		return true;
 	}
-#endif
 
 	//using Print::write;
 private:
