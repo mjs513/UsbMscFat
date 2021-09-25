@@ -121,61 +121,38 @@ public:
 		mscfatfile.rewindDirectory();
 	}
 
-	virtual bool getCreateDate(DateTimeFields &tm) {
-		uint16_t pdate; uint16_t ptime;
-		bool success;
-		success = mscfatfile.getCreateDateTime(&pdate, &ptime);
-		if(!success) return false;
-		tm.sec = FS_SECOND(ptime);
-		tm.min = FS_MINUTE(ptime);
-		tm.hour = FS_HOUR(ptime);
-		tm.mday = FS_DAY(pdate);
-		tm.mon = FS_MONTH(pdate) - 1;
-		tm.year = FS_YEAR(pdate) - 1900;
+	virtual bool getCreateTime(DateTimeFields &tm) {
+		uint16_t fat_date, fat_time;
+		if (!mscfatfile.getCreateDateTime(&fat_date, &fat_time)) return false;
+		tm.sec = FS_SECOND(fat_time);
+		tm.min = FS_MINUTE(fat_time);
+		tm.hour = FS_HOUR(fat_time);
+		tm.mday = FS_DAY(fat_date);
+		tm.mon = FS_MONTH(fat_date) - 1;
+		tm.year = FS_YEAR(fat_date) - 1900;
 		return true;
 	}
-	virtual bool getModifyDate(DateTimeFields &tm) {
-		uint16_t pdate; uint16_t ptime;
-		bool success;
-		success = mscfatfile.getModifyDateTime(&pdate, &ptime);
-		if(!success) return false;
-		tm.sec = FS_SECOND(ptime);
-		tm.min = FS_MINUTE(ptime);
-		tm.hour = FS_HOUR(ptime);
-		tm.mday = FS_DAY(pdate);
-		tm.mon = FS_MONTH(pdate) - 1;
-		tm.year = FS_YEAR(pdate) - 1900;
+	virtual bool getModifyTime(DateTimeFields &tm) {
+		uint16_t fat_date, fat_time;
+		if (!mscfatfile.getModifyDateTime(&fat_date, &fat_time)) return false;
+		tm.sec = FS_SECOND(fat_time);
+		tm.min = FS_MINUTE(fat_time);
+		tm.hour = FS_HOUR(fat_time);
+		tm.mday = FS_DAY(fat_date);
+		tm.mon = FS_MONTH(fat_date) - 1;
+		tm.year = FS_YEAR(fat_date) - 1900;
 		return true;
 	}
-
-	
-	bool setCreateTime(const DateTimeFields &tm) {
-		uint8_t flags, month, day, hour, minute, second;
-		uint16_t year;
-		bool success = mscfatfile.timestamp(flags, year, month, day, hour, minute, second);
-		if(!success) return false;
-		tm.sec = second;
-		tm.min = minute;
-		tm.hour = hour;
-		tm.mday = day;
-		tm.mon = month - 1;
-		tm.year = year - 1900;
-		return true;
+	virtual bool setCreateTime(const DateTimeFields &tm) {
+		if (tm.year < 80 || tm.year > 207) return false;
+		return mscfatfile.timestamp(T_CREATE, tm.year + 1900, tm.mon + 1,
+			tm.mday, tm.hour, tm.min, tm.sec);
 	}
-	bool setModifyTime(const DateTimeFields &tm) {
-		uint8_t flags, month, day, hour, minute, second;
-		uint16_t year;
-		bool success = mscfatfile.timestamp(flags, year, month, day, hour, minute, second);
-		if(!success) return false;
-		tm.sec = second;
-		tm.min = minute;
-		tm.hour = hour;
-		tm.mday = day;
-		tm.mon = month - 1;
-		tm.year = year - 1900;
-		return true;
+	virtual bool setModifyTime(const DateTimeFields &tm) {
+		if (tm.year < 80 || tm.year > 207) return false;
+		return mscfatfile.timestamp(T_WRITE, tm.year + 1900, tm.mon + 1,
+			tm.mday, tm.hour, tm.min, tm.sec);
 	}
-
 	//using Print::write;
 private:
 	MSCFAT_FILE mscfatfile;
