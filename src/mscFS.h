@@ -123,33 +123,54 @@ public:
 
 	virtual bool getCreateTime(DateTimeFields &tm) {
 		uint16_t fat_date, fat_time;
-		if (!mscfatfile.getCreateDateTime(&fat_date, &fat_time)) return false;
+		if (!mscfatfile.getCreateDateTime(&fat_date, &fat_time))
+		{
+			Serial.println("/n===============getCreatTime Fail");
+			return false;
+		}
 		tm.sec = FS_SECOND(fat_time);
 		tm.min = FS_MINUTE(fat_time);
 		tm.hour = FS_HOUR(fat_time);
 		tm.mday = FS_DAY(fat_date);
 		tm.mon = FS_MONTH(fat_date) - 1;
 		tm.year = FS_YEAR(fat_date) - 1900;
+		Serial.printf("============GCT: %d, %d, %d\n", FS_YEAR(fat_date) - 1900, FS_MONTH(fat_date) - 1, FS_DAY(fat_date));
 		return true;
 	}
 	virtual bool getModifyTime(DateTimeFields &tm) {
 		uint16_t fat_date, fat_time;
-		if (!mscfatfile.getModifyDateTime(&fat_date, &fat_time)) return false;
+		if (!mscfatfile.getModifyDateTime(&fat_date, &fat_time))		{
+			Serial.println("===================getModifyTime Fail");
+			return false;
+		}
 		tm.sec = FS_SECOND(fat_time);
 		tm.min = FS_MINUTE(fat_time);
 		tm.hour = FS_HOUR(fat_time);
 		tm.mday = FS_DAY(fat_date);
 		tm.mon = FS_MONTH(fat_date) - 1;
 		tm.year = FS_YEAR(fat_date) - 1900;
+		Serial.printf("===============GMT: %d, %d, %d\n", FS_YEAR(fat_date) - 1900, FS_MONTH(fat_date) - 1, FS_DAY(fat_date));
+
 		return true;
 	}
 	virtual bool setCreateTime(const DateTimeFields &tm) {
-		if (tm.year < 80 || tm.year > 207) return false;
+		if (tm.year < 80 || tm.year > 207)
+		{
+			Serial.println("==========setCreateTime Fail");
+			return false;
+		}
+		Serial.printf("=================SCT: %d, %d, %d\n", tm.year + 1900, tm.mon + 1, tm.sec);
+
 		return mscfatfile.timestamp(T_CREATE, tm.year + 1900, tm.mon + 1,
 			tm.mday, tm.hour, tm.min, tm.sec);
 	}
 	virtual bool setModifyTime(const DateTimeFields &tm) {
-		if (tm.year < 80 || tm.year > 207) return false;
+		if (tm.year < 80 || tm.year > 207) 
+		{
+			Serial.println("==========setModifyTime Fail");
+			return false;
+		}
+		Serial.printf("=================SMT: %d, %d, %d\n", tm.year + 1900, tm.mon + 1, tm.sec);
 		return mscfatfile.timestamp(T_WRITE, tm.year + 1900, tm.mon + 1,
 			tm.mday, tm.hour, tm.min, tm.sec);
 	}
