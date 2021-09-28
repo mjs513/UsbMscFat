@@ -123,64 +123,44 @@ public:
 
 	virtual bool getCreateTime(DateTimeFields &tm) {
 		uint16_t fat_date, fat_time;
-		if (!mscfatfile.getCreateDateTime(&fat_date, &fat_time))
-		{
-			Serial.println("/n===============getCreatTime Fail");
-			return false;
-		}
+		if (!mscfatfile.getCreateDateTime(&fat_date, &fat_time)) { return false; }
 		tm.sec = FS_SECOND(fat_time);
 		tm.min = FS_MINUTE(fat_time);
 		tm.hour = FS_HOUR(fat_time);
 		tm.mday = FS_DAY(fat_date);
 		tm.mon = FS_MONTH(fat_date) - 1;
 		tm.year = FS_YEAR(fat_date) - 1900;
-		Serial.printf("============GCT: %d, %d, %d\n", FS_YEAR(fat_date) - 1900, FS_MONTH(fat_date) - 1, FS_DAY(fat_date));
 		return true;
 	}
 	virtual bool getModifyTime(DateTimeFields &tm) {
 		uint16_t fat_date, fat_time;
-		if (!mscfatfile.getModifyDateTime(&fat_date, &fat_time))		{
-			Serial.println("===================getModifyTime Fail");
-			return false;
-		}
+		if (!mscfatfile.getModifyDateTime(&fat_date, &fat_time)) { return false; }
 		tm.sec = FS_SECOND(fat_time);
 		tm.min = FS_MINUTE(fat_time);
 		tm.hour = FS_HOUR(fat_time);
 		tm.mday = FS_DAY(fat_date);
 		tm.mon = FS_MONTH(fat_date) - 1;
 		tm.year = FS_YEAR(fat_date) - 1900;
-		Serial.printf("===============GMT: %d, %d, %d\n", FS_YEAR(fat_date) - 1900, FS_MONTH(fat_date) - 1, FS_DAY(fat_date));
-
 		return true;
 	}
 	virtual bool setCreateTime(const DateTimeFields &tm) {
-		if (tm.year < 80 || tm.year > 207)
-		{
-			Serial.println("==========setCreateTime Fail");
-			return false;
-		}
-		Serial.printf("=================SCT: %d, %d, %d\n", tm.year + 1900, tm.mon + 1, tm.sec);
-
+		if (tm.year < 80 || tm.year > 207) { return false; }
 		return mscfatfile.timestamp(T_CREATE, tm.year + 1900, tm.mon + 1,
 			tm.mday, tm.hour, tm.min, tm.sec);
 	}
 	virtual bool setModifyTime(const DateTimeFields &tm) {
-		if (tm.year < 80 || tm.year > 207) 
-		{
-			Serial.println("==========setModifyTime Fail");
-			return false;
-		}
-		Serial.printf("=================SMT: %d, %d, %d\n", tm.year + 1900, tm.mon + 1, tm.sec);
-		return mscfatfile.timestamp(T_WRITE, tm.year + 1900, tm.mon + 1,
-			tm.mday, tm.hour, tm.min, tm.sec);
+		  uint32_t now1 = Teensy3Clock.get();
+		  DateTimeFields tm1;  
+		  breakTime(now1, tm1);
+		if (tm1.year < 80 || tm1.year > 207) { return false; }
+		return mscfatfile.timestamp(T_WRITE, tm1.year + 1900, tm1.mon + 1,
+			tm1.mday, tm1.hour, tm1.min, tm1.sec);
 	}
 	//using Print::write;
 private:
 	MSCFAT_FILE mscfatfile;
 	char *filename;
 };
-
-
 
 class MSCClass : public FS
 {
@@ -191,10 +171,24 @@ public:
 	}
 	File open(const char *filepath, uint8_t mode = FILE_READ) {
 		oflag_t flags = O_READ;
-		if (mode == FILE_WRITE) {flags = O_RDWR | O_CREAT | O_AT_END; _cached_usedSize_valid = false; }
-
+		if (mode == FILE_WRITE) {flags = O_RDWR | O_CREAT | O_AT_END; _cached_usedSize_valid = false;}
 		else if (mode == FILE_WRITE_BEGIN) {flags = O_RDWR | O_CREAT;  _cached_usedSize_valid = false; }
 		MSCFAT_FILE file = mscfs.open(filepath, flags);
+		uint32_t now1 = Teensy3Clock.get();
+		DateTimeFields tm;  
+		breakTime(now1, tm);
+		if (tm.year < 80 || tm.year > 207) 
+		{
+			Serial.println("Date out of Range....");
+		} else {
+			file.timestamp(T_WRITE, tm.year + 1900, tm.mon + 1,
+				tm.mday, tm.hour, tm.min, tm.sec);
+			if(mode == FILE_WRITE_BEGIN) {
+				file.timestamp(T_CREATE, tm.year + 1900, tm.mon + 1,
+					tm.mday, tm.hour, tm.min, tm.sec);
+			}
+		}
+		
 		if (file) return File(new MSCFile(file));
 			return File();
 	}
