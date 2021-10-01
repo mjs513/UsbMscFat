@@ -85,7 +85,20 @@ void processMSDrive(uint8_t drive_number, msController &msDrive, UsbFs &msc)
     }
   }
 }
-  
+
+void dateTime(uint16_t *date, uint16_t *time, uint8_t *ms10) {
+  uint32_t now = Teensy3Clock.get();
+  if (now < 315532800) { // before 1980
+    *date = 0;
+    *time = 0;
+  } else {
+    DateTimeFields datetime;
+    breakTime(now, datetime);
+    *date = FS_DATE(datetime.year + 1900, datetime.mon + 1, datetime.mday);
+    *time = FS_TIME(datetime.hour, datetime.min, datetime.sec);
+  }
+}
+
 void ShowPartitionList() {
   Serial.println("\n***** Partition List *****");
   char volName[32];
@@ -152,17 +165,19 @@ void setup(){
   ShowPartitionList();
   ShowCommandList();
 
+  FsDateTime::setCallback(dateTime);
+
 }
 
 //=============================================================================
 void ShowCommandList() {
   Serial.println("Commands:");
-  Serial.println("  1 - Add new drive(s)");
+  Serial.println("  1 - Scan for new drive(s)");
   Serial.println("  2 - Show Partition List");
   Serial.println("=============  Logging  =============");
   Serial.println("  s <partition> - Start Logging data (Restarting logger will append records to existing log)");
   Serial.println("  x - Stop Logging data");
-  Serial.println("  u <partition> - Dump Log");
+  Serial.println("  d <partition> - Dump Log");
   Serial.println("============ Drive Operations ===============");
   Serial.println("  f <partition> [16|32|ex] - to format");
   Serial.println("  v <partition> <label> - to change volume label");
@@ -283,7 +298,7 @@ void loop() {
         break;
       case 'x': stopLogging();
         break;
-      case 'u': dumpLog();
+      case 'd': dumpLog();
         break;
     }
   
@@ -327,6 +342,7 @@ void stopLogging()
   Serial.println("\nStopped Logging Data!!!");
   write_data = false;
   // Closes the data file.
+  dataFile.flush(); //flush to set modified date.
   dataFile.close();
   Serial.printf("Records written = %d\n", record_count);
 }
