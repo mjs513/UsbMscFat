@@ -27,6 +27,12 @@
 #include "PFsLib.h"
 #include "PFsExFatFormatter.h"
 
+// Compatibility to SDFAT 2.1.1
+#ifndef DBG_FAIL_MACRO
+#define DBG_FAIL_MACRO
+#endif
+uint16_t toUpcase(uint16_t chr);
+
 //Set to 0 for debug info
 #define DBG_Print	1
 #if defined(DBG_Print)
