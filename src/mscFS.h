@@ -228,7 +228,7 @@ public:
 	uint64_t totalSize() {
 		return (uint64_t)mscfs.clusterCount() * (uint64_t)mscfs.bytesPerCluster();
 	}
-	bool format(format_type formattype, char progressChar=0, Print& pr=Serial) { return false; }
+	bool format(int type=0, char progressChar=0, Print& pr=Serial) { return false; }
 	
 public: // allow access, so users can mix MSC & SdFat APIs
 	MSCFAT_BASE mscfs;
