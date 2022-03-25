@@ -71,11 +71,11 @@ bool PFsFatFormatter::format(PFsVolume &partVol, uint8_t fat_type, uint8_t* secB
   uint32_t sectorCount;
   uint32_t mbrLBA; 
   uint8_t mbrPart;
+  uint8_t mbrType;
 
+  PFsLib::voltype_t vt = pfslib.getPartitionInfo(m_dev, partVol.part(), pr, secBuf, firstLBA, sectorCount, mbrLBA, mbrPart, mbrType);
 
-  PFsLib::voltype_t vt = pfslib.getPartitionInfo(m_dev, partVol.part(), pr, secBuf, firstLBA, sectorCount, mbrLBA, mbrPart);
-
-  DBGPrintf("Part:%u vt:%u first:%u, count:%u MBR:%u MBR Part:%u\n", partVol.part(), (uint8_t)vt, firstLBA, sectorCount, mbrLBA, mbrPart);
+  DBGPrintf("Part:%u vt:%u first:%u, count:%u MBR:%u MBR Part:%u MBR Type: %u\n", partVol.part(), (uint8_t)vt, firstLBA, sectorCount, mbrLBA, mbrPart, mbrType);
 
   if (vt == PFsLib::INVALID_VOL) return false;
 

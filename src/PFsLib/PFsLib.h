@@ -47,7 +47,7 @@ class PFsLib : public PFsFatFormatter, public PFsExFatFormatter
 
    typedef enum {INVALID_VOL=0, MBR_VOL, EXT_VOL, GPT_VOL, OTHER_VOL} voltype_t; // what type of volume did the mapping return
    voltype_t getPartitionInfo(BlockDeviceInterface *blockDev, uint8_t part,  Print *pserial, uint8_t *secBuf,
-      uint32_t &firstLBA, uint32_t &sectorCount, uint32_t &mbrLBA, uint8_t &mbrPart);
+      uint32_t &firstLBA, uint32_t &sectorCount, uint32_t &mbrLBA, uint8_t &mbrPart, uint8_t &mbrType);
 
    // Sort of test function for the one above.
    void listPartitions(BlockDeviceInterface *blockDev, Print &Serialx);

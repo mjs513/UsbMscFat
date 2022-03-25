@@ -290,6 +290,9 @@ uint32_t PFsLib::mbrDmp(BlockDeviceInterface *blockDev, uint32_t device_sector_c
       Serialx.printf(F("\t < unused area starting at: %u length %u >\n"), next_free_sector, starting_sector-next_free_sector);
     }
     switch (pt->type) {
+    case 1:
+      Serialx.print(F("FAT12:\t"));
+      break;
     case 4:
     case 6:
     case 0xe:
@@ -359,6 +362,9 @@ void PFsLib::extgptDmp(BlockDeviceInterface *blockDev, MbrSector_t *mbr, uint8_t
     uint32_t starting_sector = getLe32(pt->relativeSectors);
     uint32_t total_sector = getLe32(pt->totalSectors);
     switch (pt->type) {
+    case 1:
+      Serialx.print(F("FAT12:\t"));
+      break;
     case 4:
     case 6:
     case 0xe:
@@ -596,11 +602,12 @@ void PFsLib::compare_dump_hexbytes(const void *ptr, const uint8_t *compare_buf, 
 //================================================================================================
 //typedef enum {INVALID_VOL=0, MBR_VOL, EXT_VOL, GPT_VOL} voltype_t; // what type of volume did the mapping return
 PFsLib::voltype_t PFsLib::getPartitionInfo(BlockDeviceInterface *blockDev, uint8_t part, Print* pserial, uint8_t *secBuf,
-    uint32_t &firstLBA, uint32_t &sectorCount, uint32_t &mbrLBA, uint8_t &mbrPart) {
+    uint32_t &firstLBA, uint32_t &sectorCount, uint32_t &mbrLBA, uint8_t &mbrPart, uint8_t &mbrType) {
 
   //Serial.printf("PFsLib::getPartitionInfo(%x, %u)\n", (uint32_t)blockDev, part);
   MbrSector_t *mbr;
   MbrPart_t *mp;
+  mbrType = 0;
 
   if (!part) return INVALID_VOL; // won't handle this here.
   part--; // zero base it.
@@ -642,6 +649,7 @@ PFsLib::voltype_t PFsLib::getPartitionInfo(BlockDeviceInterface *blockDev, uint8
       sectorCount = getLe32(mp->totalSectors);
       mbrLBA = 0;
       mbrPart = part; // zero based. 
+      mbrType = mp->type;
       return MBR_VOL;
     }
   }  
@@ -689,11 +697,13 @@ void PFsLib::listPartitions(BlockDeviceInterface *blockDev, Print &Serialx) {
   uint32_t sectorCount;
   uint32_t mbrLBA;
   uint8_t  mbrPart;
+  uint8_t  mbrType;
   uint8_t secBuf[512];
 
-  Serialx.println("\nPART\tType\tStart\tCount\t(MBR\tPart)\tVolume Type");
+  Serialx.println("\nPART\tType\tStart\tCount\t(MBR\tPart\tType)\tVolume Type");
   uint32_t part = 1;
-  while ((vt = getPartitionInfo(blockDev, part, &Serialx, secBuf, firstLBA, sectorCount, mbrLBA, mbrPart)) != PFsLib::INVALID_VOL) {
+
+  while ((vt = getPartitionInfo(blockDev, part, &Serialx, secBuf, firstLBA, sectorCount, mbrLBA, mbrPart, mbrType)) != PFsLib::INVALID_VOL) {
     Serial.printf("%u\t", part);
     switch(vt) {
       case PFsLib::MBR_VOL: Serialx.write('M'); break;
@@ -702,7 +712,7 @@ void PFsLib::listPartitions(BlockDeviceInterface *blockDev, Print &Serialx) {
       case PFsLib::OTHER_VOL: Serialx.write('O'); break;
       default: Serialx.write('?'); break;
     }
-    Serialx.printf("\t%u\t%u\t%u\t%u", firstLBA, sectorCount, mbrLBA, mbrPart);
+    Serialx.printf("\t%u\t%u\t%u\t%u\t%u", firstLBA, sectorCount, mbrLBA, mbrPart, mbrType);
 
     // Lets see if we can guess what FS this might be:
     if (vt != PFsLib::OTHER_VOL) {
@@ -717,10 +727,38 @@ void PFsLib::listPartitions(BlockDeviceInterface *blockDev, Print &Serialx) {
         } else {
           pbs_t* pbs = reinterpret_cast<pbs_t*> (secBuf);
           BpbFat32_t* bpb = reinterpret_cast<BpbFat32_t*>(pbs->bpb);
+          #if 0
+          Serialx.printf(" bytesPerSector:%u\n", getLe16(bpb->bytesPerSector));
+          Serialx.printf(" sectorsPerCluster:%u\n", bpb->sectorsPerCluster);
+          Serialx.printf(" reservedSectorCount:%u\n", getLe16(bpb->reservedSectorCount));
+          Serialx.printf(" fatCount:%u\n", bpb->fatCount);
+          Serialx.printf(" rootDirEntryCount:%u\n", getLe16(bpb->rootDirEntryCount));
+          Serialx.printf(" totalSectors16:%u\n", getLe16(bpb->totalSectors16));
+          Serialx.printf(" mediaType:%u\n", bpb->mediaType);
+          Serialx.printf(" sectorsPerFat16:%u\n", getLe16(bpb->sectorsPerFat16));
+          Serialx.printf(" sectorsPerTrtack:%u\n", getLe16(bpb->sectorsPerTrtack));
+          Serialx.printf(" headCount:%u\n", getLe16(bpb->headCount));
+          Serialx.printf(" hidddenSectors:%u\n", getLe32(bpb->hidddenSectors));
+          Serialx.printf(" totalSectors32:%u\n", getLe32(bpb->totalSectors32));
+          Serialx.printf(" sectorsPerFat32:%u\n", getLe32(bpb->sectorsPerFat32));
+          Serialx.printf(" fat32Flags:%u\n", getLe16(bpb->fat32Flags));
+          Serialx.printf(" fat32Version:%u\n", getLe16(bpb->fat32Version));
+          Serialx.printf(" fat32RootCluster:%u\n", getLe32(bpb->fat32RootCluster));
+          Serialx.printf(" fat32FSInfoSector:%u\n", getLe16(bpb->fat32FSInfoSector));
+          Serialx.printf(" fat32BackBootSector:%u\n", getLe16(bpb->fat32BackBootSector));
+          Serialx.printf(" physicalDriveNumber:%u\n", bpb->physicalDriveNumber);
+          Serialx.printf(" extSignature:%u\n", bpb->extSignature);
+          Serialx.printf(" volumeSerialNumber:%u\n", getLe32(bpb->volumeSerialNumber));
+          #endif
+
           // hacks for now probably should have more validation
           if (getLe16(bpb->bytesPerSector) == 512) {
-            if (getLe16(bpb->sectorsPerFat16)) Serialx.print("\tFat16:");
-            else if (getLe32(bpb->sectorsPerFat32)) Serialx.print("\tFat32:");
+            uint16_t sectorsPerFat16 = getLe16(bpb->sectorsPerFat16);
+            if (sectorsPerFat16) {
+              if (mbrType == 1) Serialx.print("\tFat12:");
+              else Serialx.print("\tFat16:");
+
+            } else if (getLe32(bpb->sectorsPerFat32)) Serialx.print("\tFat32:");
           }
         }
       }

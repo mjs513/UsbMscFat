@@ -339,6 +339,28 @@ static void _getfreeclustercountCB_fat16(uint32_t token, uint8_t *buffer)
 
   //digitalWriteFast(1, LOW);
 }
+static void _getfreeclustercountCB_fat12(uint32_t token, uint8_t *buffer) 
+{
+  //digitalWriteFast(1, HIGH);
+//  Serial.print("&");
+  _gfcc_t *gfcc = (_gfcc_t *)token;
+  uint16_t cnt = 341; // 512/2;
+  if (cnt > gfcc->todo) cnt = gfcc->todo;
+  gfcc->todo -= cnt; // update count here...
+  //gfcc->sectors_left_in_call--;
+  // fat16
+  while (cnt) {
+    if ((buffer[0] == 0) && ((buffer[1] & 0xf0) == 0)) gfcc->free++;  
+    cnt--;
+    if (cnt) {
+      if ((buffer[2] == 0) && ((buffer[1] & 0x0f) == 0)) gfcc->free++; 
+      cnt--;
+      buffer += 3;
+    }
+  }
+
+  //digitalWriteFast(1, LOW);
+}
 
 static void _getfreeclustercountCB_fat32(uint32_t token, uint8_t *buffer) 
 {
@@ -374,6 +396,9 @@ uint32_t PFsVolume::freeClusterCount()  {
 
   switch (m_fVol->fatType()) {
     default: return 0;
+    case FAT_TYPE_FAT12:
+      Serial.printf("$$$Fat12 fcc: %u\n", m_fVol->freeClusterCount());
+      callback = &_getfreeclustercountCB_fat12; break;
     case FAT_TYPE_FAT16: callback = &_getfreeclustercountCB_fat16; break;
     case FAT_TYPE_FAT32: callback = &_getfreeclustercountCB_fat32; break;
   }
@@ -397,7 +422,7 @@ uint32_t PFsVolume::freeClusterCount()  {
 
 //  digitalWriteFast(0, LOW);
   if(!succeeded) gfcc.free = (uint32_t)-1;
-  //Serial.printf("    status: %u free cluster: %x not free:%x\n", succeeded, gfcc.free, gfcc.not_free);
+  //Serial.printf("    status: %u free cluster: %u(0x%x)\n", succeeded, gfcc.free, gfcc.free);
   return gfcc.free;
 }
 

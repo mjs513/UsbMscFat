@@ -83,6 +83,7 @@ bool PFsExFatFormatter::format(PFsVolume &partVol, uint8_t* secBuf, print_t* pr)
   uint32_t sectorCount;
   uint32_t mbrLBA; 
   uint8_t mbrPart;
+  uint8_t mbrType;
   uint8_t vs;
 
   m_secBuf = secBuf;
@@ -90,9 +91,9 @@ bool PFsExFatFormatter::format(PFsVolume &partVol, uint8_t* secBuf, print_t* pr)
   m_dev = partVol.blockDevice();
   m_part = partVol.part()-1;  // convert to 0 biased. 
 
-  PFsLib::voltype_t vt = pfslib.getPartitionInfo(m_dev, partVol.part(), pr, secBuf, firstLBA, sectorCount, mbrLBA, mbrPart);
+  PFsLib::voltype_t vt = pfslib.getPartitionInfo(m_dev, partVol.part(), pr, secBuf, firstLBA, sectorCount, mbrLBA, mbrPart, mbrType);
 
-  DBGPrintf("Part:%u vt:%u first:%u, count:%u MBR:%u MBR Part:%u\n", partVol.part(), (uint8_t)vt, firstLBA, sectorCount, mbrLBA, mbrPart);
+  DBGPrintf("Part:%u vt:%u first:%u, count:%u MBR:%u MBR Part:%u Type:%u\n", partVol.part(), (uint8_t)vt, firstLBA, sectorCount, mbrLBA, mbrPart, mbrType);
 
   if (vt == PFsLib::INVALID_VOL) return false;
 
